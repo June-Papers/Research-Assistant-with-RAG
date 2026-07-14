@@ -2,12 +2,11 @@ import json
 import os
 from typing import Any, Dict, List
 
-from openai import OpenAI
-
-from config import OPENAI_API_KEY, OPENAI_MODEL
+from config import OPENAI_API_KEY
 from dart.utils import configure_logging, logger
 from rag.csv_generator import CSVGenerator
 from rag.embedding import EmbeddingClient
+from rag.llm.factory import get_llm
 from rag.prompt import PromptBuilder
 from rag.query_parser import QueryParser
 from rag.retrieval import Retriever
@@ -53,12 +52,8 @@ def run_query(query: str) -> str:
                 continue
 
             prompt = prompt_builder.build(query, retrieved_chunks)
-            client = OpenAI(api_key=OPENAI_API_KEY)
-            response = client.responses.create(
-                model=OPENAI_MODEL,
-                input=prompt,
-            )
-            content = response.output_text
+            provider = get_llm()
+            content = provider.generate(prompt)
             try:
                 parsed_json = json.loads(content)
             except json.JSONDecodeError:
